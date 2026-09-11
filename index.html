@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>💌 一份来自幸福的通知</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;overflow:hidden;font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",serif}
+
+  /* ===== 花里胡哨的背景 ===== */
+  body{
+    background:linear-gradient(135deg,#ffd9e8,#ffe8b7,#ffc6de,#f7c8ff,#ffe3c2,#ffd9e8);
+    background-size:400% 400%;
+    animation:bgMove 14s ease infinite;
+    display:flex;align-items:center;justify-content:center;
+    position:relative;
+  }
+  @keyframes bgMove{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+
+  /* 光晕泡泡 */
+  .blob{position:fixed;border-radius:50%;filter:blur(60px);opacity:.55;pointer-events:none;z-index:0}
+  .b1{width:340px;height:340px;background:#ff7fb0;top:-90px;left:-80px;animation:float1 12s ease-in-out infinite}
+  .b2{width:300px;height:300px;background:#ffd166;bottom:-100px;right:-70px;animation:float2 15s ease-in-out infinite}
+  .b3{width:260px;height:260px;background:#b98cff;top:40%;right:-100px;animation:float1 18s ease-in-out infinite reverse}
+  @keyframes float1{0%,100%{transform:translate(0,0)}50%{transform:translate(60px,50px)}}
+  @keyframes float2{0%,100%{transform:translate(0,0)}50%{transform:translate(-70px,-40px)}}
+
+  /* 飘落的花瓣/爱心 */
+  #petals{position:fixed;inset:0;pointer-events:none;z-index:1;overflow:hidden}
+  .petal{position:absolute;top:-8vh;font-size:22px;animation:fall linear infinite;opacity:.9}
+  @keyframes fall{
+    0%{transform:translateY(-10vh) rotate(0deg) translateX(0);opacity:0}
+    10%{opacity:1}
+    100%{transform:translateY(115vh) rotate(720deg) translateX(60px);opacity:.85}
+  }
+
+  /* ===== 信封 ===== */
+  .stage{position:relative;z-index:5;text-align:center;perspective:1200px}
+
+  .hint{
+    font-size:15px;color:#b03a67;letter-spacing:2px;margin-bottom:16px;
+    animation:blink 1.6s ease-in-out infinite;font-weight:600;
+    text-shadow:0 1px 0 #fff;
+  }
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+
+  .envelope{
+    width:min(78vw,340px);height:min(56vw,240px);
+    margin:0 auto;position:relative;cursor:pointer;
+    animation:shake 2.6s ease-in-out infinite;
+    transform-style:preserve-3d;
+  }
+  @keyframes shake{0%,100%{transform:translateY(0) rotate(-1.5deg)}50%{transform:translateY(-14px) rotate(1.5deg)}}
+  .envelope:active{transform:scale(.96)}
+
+  .back{
+    position:absolute;inset:0;border-radius:14px;
+    background:linear-gradient(160deg,#fff2f7,#ffd8e6);
+    box-shadow:0 18px 44px rgba(190,60,110,.35),inset 0 0 0 2px rgba(255,255,255,.7);
+  }
+  .flap{
+    position:absolute;top:0;left:0;width:100%;height:58%;
+    background:linear-gradient(170deg,#ff9ec4,#ff6fa8);
+    clip-path:polygon(0 0,100% 0,50% 100%);
+    border-radius:14px 14px 0 0;transform-origin:top center;
+    transition:transform .7s cubic-bezier(.5,-0.3,.4,1.4);
+    box-shadow:0 6px 14px rgba(190,60,110,.25);z-index:3;
+  }
+  .envelope.open .flap{transform:rotateX(-178deg)}
+  .body2{
+    position:absolute;bottom:0;left:0;width:100%;height:62%;
+    background:linear-gradient(180deg,#ffe3ee,#ffc0d8);
+    border-radius:0 0 14px 14px;z-index:2;
+  }
+  .body2::before,.body2::after{
+    content:"";position:absolute;top:0;width:0;height:0;
+    border-style:solid;
+  }
+  .body2::before{left:0;border-width:0 0 90px 170px;border-color:transparent transparent #ffd0e2 transparent}
+  .body2::after{right:0;border-width:0 170px 90px 0;border-color:transparent #ffd0e2 transparent transparent}
+
+  .seal{
+    position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);
+    width:76px;height:76px;border-radius:50%;z-index:4;
+    background:radial-gradient(circle at 35% 30%,#ff5d8f,#c9184a);
+    color:#fff;font-size:13px;font-weight:700;line-height:1.15;
+    display:flex;align-items:center;justify-content:center;text-align:center;
+    box-shadow:0 6px 16px rgba(160,20,60,.45),inset 0 0 0 3px rgba(255,255,255,.35);
+    transition:opacity .3s;
+  }
+  .envelope.open .seal{opacity:0}
+
+  /* ===== 请柬卡片 ===== */
+  .card{
+    position:fixed;z-index:10;inset:0;
+    display:flex;align-items:center;justify-content:center;
+    padding:20px;opacity:0;pointer-events:none;
+    transition:opacity .5s ease;
+  }
+  .card.show{opacity:1;pointer-events:auto}
+
+  .paper{
+    width:min(92vw,420px);max-height:88vh;overflow-y:auto;overscroll-behavior:contain;
+    background:
+      radial-gradient(circle at 50% 0%,#fff7fa,#fffdf8 65%);
+    border:3px double #e0a4bd;
+    border-radius:10px;
+    padding:34px 26px 30px;
+    box-shadow:0 24px 60px rgba(150,40,85,.4);
+    transform:translateY(60px) scale(.85);
+    transition:transform .75s cubic-bezier(.2,.9,.3,1.2);
+    position:relative;
+  }
+  .card.show .paper{transform:translateY(0) scale(1)}
+  .paper::-webkit-scrollbar{width:5px}
+  .paper::-webkit-scrollbar-thumb{background:#f0b8cd;border-radius:9px}
+
+  .corner{position:absolute;font-size:26px;opacity:.85}
+  .c1{top:8px;left:12px}.c2{top:8px;right:12px}
+  .c3{bottom:8px;left:12px}.c4{bottom:8px;right:12px}
+
+  .top-small{
+    font-size:12px;letter-spacing:6px;color:#c986a3;text-align:center;margin-bottom:14px;
+  }
+  .title{
+    text-align:center;font-size:30px;font-weight:800;letter-spacing:8px;
+    background:linear-gradient(90deg,#d81b60,#ff6fa8,#c9184a,#ff8fb1);
+    background-size:200% auto;-webkit-background-clip:text;background-clip:text;
+    -webkit-text-fill-color:transparent;animation:shine 3s linear infinite;
+    margin-bottom:6px;
+  }
+  @keyframes shine{to{background-position:200% center}}
+  .sub{text-align:center;font-size:12px;color:#bb7a95;letter-spacing:3px;margin-bottom:20px}
+
+  .divider{display:flex;align-items:center;gap:10px;margin:16px 0;color:#e8a5c0;font-size:13px}
+  .divider::before,.divider::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,transparent,#eaa8c4,transparent)}
+
+  .names{
+    text-align:center;font-size:26px;font-weight:800;color:#c2185b;
+    line-height:1.7;letter-spacing:2px;
+  }
+  .names .amp{display:inline-block;animation:beat 1s ease-in-out infinite;margin:0 4px}
+  @keyframes beat{0%,100%{transform:scale(1)}50%{transform:scale(1.35)}}
+  .role{font-size:12px;color:#b3798f;letter-spacing:4px;display:block;font-weight:400}
+
+  .poem{
+    font-size:14px;line-height:2.1;color:#7a5566;text-align:center;
+    letter-spacing:1px;margin:6px 0;
+  }
+  .info{
+    background:linear-gradient(135deg,#fff2f7,#ffeaf3);
+    border-radius:8px;padding:14px 16px;margin:14px 0;
+    font-size:13.5px;line-height:2;color:#8a4b66;
+    border:1px dashed #f0b8cd;
+  }
+  .info b{color:#c2185b}
+  .fineprint{font-size:11px;color:#b58a9c;line-height:1.9;text-align:center;margin-top:14px}
+  .stamp{
+    margin-top:18px;text-align:center;font-size:12px;color:#c986a3;letter-spacing:3px;
+  }
+  .btn{
+    display:block;width:100%;margin-top:18px;padding:13px;border:none;border-radius:30px;
+    background:linear-gradient(90deg,#ff6fa8,#d81b60);color:#fff;font-size:15px;font-weight:700;
+    letter-spacing:3px;cursor:pointer;box-shadow:0 8px 20px rgba(216,27,96,.4);
+  }
+  .btn:active{transform:scale(.97)}
+
+  /* 撒花 */
+  #confetti{position:fixed;inset:0;pointer-events:none;z-index:20}
+
+  /* 抖动惊喜 */
+  @keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.06)}100%{transform:scale(1)}}
+  .pop{animation:pop .5s ease}
+</style>
+</head>
+<body>
+
+<div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+<div id="petals"></div>
+
+<!-- 信封层 -->
+<div class="stage" id="stage">
+  <div class="hint">✨ 有一份喜帖，请点击拆开 ✨</div>
+  <div class="envelope" id="envelope">
+    <div class="back"></div>
+    <div class="body2"></div>
+    <div class="flap"></div>
+    <div class="seal">囍<br>拆开</div>
+  </div>
+</div>
+
+<!-- 请柬卡片 -->
+<div class="card" id="card">
+  <div class="paper">
+    <span class="corner c1">🌸</span><span class="corner c2">🌸</span>
+    <span class="corner c3">🌸</span><span class="corner c4">🌸</span>
+
+    <div class="top-small">WEDDING&nbsp;INVITATION</div>
+    <div class="title">婚 礼 请 柬</div>
+    <div class="sub">— 谨 订 于 良 辰 吉 日 —</div>
+
+    <div class="names">
+      <span class="role">新郎</span>
+      韩思语 <span class="amp">❤️</span> 方桐欣
+      <span class="role">新娘</span>
+    </div>
+
+    <div class="divider">囍</div>
+
+    <p class="poem">
+      于千万人之中，遇见你所遇见的人<br>
+      于千万年之中，时间的无涯荒野里<br>
+      没有早一步，也没有晚一步<br>
+      刚巧赶上了 —— 那就结了吧。
+    </p>
+
+    <div class="divider">💍</div>
+
+    <div class="info">
+      <b>典礼时间</b>　2026年10月1日（星期四）上午11:18<br>
+      <b>典礼地点</b>　幸福大酒店 · 三楼「囍」宴会厅<br>
+      <b>着装要求</b>　怎么好看怎么穿，别穿得比新人还抢镜<br>
+      <b>用餐须知</b>　管饱，管够，管无限续杯
+    </div>
+
+    <p class="fineprint">
+      ⚠️ 温馨提示：<br>
+      本请柬一经打开，概不接受「我以为你在开玩笑」。<br>
+      份子钱不设上限，设下限。<br>
+      谢绝携带前任入场，谢绝现场求婚抢镜。<br>
+      如因本请柬产生误会，请自行负责。
+    </p>
+
+    <div class="stamp">— 敬 请 光 临 · 不 见 不 散 —</div>
+
+    <button class="btn" id="yes">💐 我一定到！（并按下了确认）</button>
+    <button class="btn" id="no" style="background:linear-gradient(90deg,#c9a0b4,#9c7b8c);box-shadow:0 8px 20px rgba(120,90,105,.35);font-size:13px">💰 随份子（点我）</button>
+  </div>
+</div>
+
+<canvas id="confetti"></canvas>
+
+<script>
+/* ---------- 飘落花瓣 ---------- */
+const petalsBox = document.getElementById('petals');
+const icons = ['🌸','🌺','💖','🌹','✨','💕','🌷','💝','🎀','💐'];
+for (let i = 0; i < 34; i++) {
+  const p = document.createElement('div');
+  p.className = 'petal';
+  p.textContent = icons[Math.floor(Math.random()*icons.length)];
+  p.style.left = Math.random()*100 + 'vw';
+  p.style.fontSize = (14 + Math.random()*20) + 'px';
+  p.style.animationDuration = (6 + Math.random()*8) + 's';
+  p.style.animationDelay = (-Math.random()*12) + 's';
+  petalsBox.appendChild(p);
+}
+
+/* ---------- 打开请柬 ---------- */
+const envelope = document.getElementById('envelope');
+const card = document.getElementById('card');
+const stage = document.getElementById('stage');
+const paper = document.querySelector('.paper');
+let opened = false;
+
+function openIt(){
+  if (opened) return;
+  opened = true;
+  envelope.classList.add('open');
+  burst(90);
+  setTimeout(() => {
+    stage.style.transition = 'opacity .4s, transform .4s';
+    stage.style.opacity = '0';
+    stage.style.transform = 'scale(.9)';
+    setTimeout(() => stage.style.display = 'none', 400);
+    card.classList.add('show');
+    paper.classList.add('pop');
+    setTimeout(()=>paper.classList.remove('pop'), 600);
+    setTimeout(()=>burst(70), 350);
+  }, 620);
+}
+envelope.addEventListener('click', openIt);
+
+/* ---------- 撒花 ---------- */
+const cvs = document.getElementById('confetti');
+const ctx = cvs.getContext('2d');
+let W, H;
+function resize(){ W = cvs.width = innerWidth; H = cvs.height = innerHeight; }
+resize();
+addEventListener('resize', resize);
+
+let pieces = [];
+const colors = ['#ff6fa8','#ffd166','#b98cff','#ff9ec4','#ff5d8f','#8ce0ff','#fff0a8'];
+
+function burst(n){
+  for (let i = 0; i < n; i++){
+    pieces.push({
+      x: W/2 + (Math.random()-0.5)*W*0.5,
+      y: H*0.35 + (Math.random()-0.5)*120,
+      vx: (Math.random()-0.5)*13,
+      vy: -6 - Math.random()*12,
+      g: 0.32 + Math.random()*0.18,
+      s: 5 + Math.random()*9,
+      r: Math.random()*Math.PI,
+      vr: (Math.random()-0.5)*0.35,
+      c: colors[Math.floor(Math.random()*colors.length)],
+      life: 110 + Math.random()*80
+    });
+  }
+}
+
+function loop(){
+  ctx.clearRect(0,0,W,H);
+  pieces = pieces.filter(p => p.life > 0 && p.y < H + 60);
+  for (const p of pieces){
+    p.life--;
+    p.vy += p.g;
+    p.x += p.vx;
+    p.y += p.vy;
+    p.r += p.vr;
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.r);
+    ctx.fillStyle = p.c;
+    ctx.globalAlpha = Math.min(1, p.life/45);
+    ctx.fillRect(-p.s/2, -p.s/4, p.s, p.s/2);
+    ctx.restore();
+  }
+  requestAnimationFrame(loop);
+}
+loop();
+
+/* ---------- 两个按钮 ---------- */
+document.getElementById('yes').addEventListener('click', function(){
+  this.textContent = '🎉 恭喜你，已被强制列入宾客名单';
+  burst(140);
+});
+document.getElementById('no').addEventListener('click', function(){
+  const r = ['💰 份子钱已收到（并没有）','🎁 礼品柜已满，请直接转账','❤️ 心意领了，人必须到','🙈 收款码：下辈子还'];
+  this.textContent = r[Math.floor(Math.random()*r.length)];
+  burst(60);
+});
+</script>
+</body>
+</html>
